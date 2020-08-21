@@ -98,6 +98,8 @@ public class Bits {
      */
     private int bitPtr;
 
+    private int nbBits;
+
     /**
      * Initialise the bit packing variables.
      */
@@ -152,6 +154,12 @@ public class Bits {
         System.arraycopy(newbytes, offset, bytes, 0, len);
         bytePtr = 0;
         bitPtr = 0;
+        nbBits = len * 8;
+    }
+
+    public int bitsRemaining()
+    {
+        return nbBits - (bytePtr*8 + bitPtr);
     }
 
     /**

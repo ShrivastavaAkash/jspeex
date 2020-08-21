@@ -176,6 +176,10 @@ public class NbDecoder
             }
       /* Search for next narrowband block (handle requests, skip wideband blocks) */
             do {
+
+                if (bits.bitsRemaining() < 5)
+                    return -1;
+
                 if (bits.unpack(1) != 0) { /* Skip wideband block (for compatibility) */
 //Wideband
           /* Get the sub-mode that was used */

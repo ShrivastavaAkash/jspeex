@@ -257,27 +257,49 @@ public class SpeexDecoder {
     public void processData(final boolean lost)
             throws StreamCorruptedException {
         int i;
-    /* decode the bitstream */
-        if (lost)
+        /* decode the bitstream */
+        if (lost) 
+        {
             decoder.decode(null, decodedData);
+            if (channels == 2)
+                decoder.decodeStereo(decodedData, frameSize);
+            
+            /* PCM saturation */
+            for (i = 0; i < frameSize * channels; i++) {
+                if (decodedData[i] > 32767.0f)
+                    decodedData[i] = 32767.0f;
+                else if (decodedData[i] < -32768.0f)
+                    decodedData[i] = -32768.0f;
+            }
+
+            /* convert to short and save to buffer */
+            for (i = 0; i < frameSize * channels; i++, outputSize++) {
+                outputData[outputSize] = (decodedData[i] > 0) ?
+                        (short) (decodedData[i] + 0.5f) :
+                        (short) (decodedData[i] - 0.5f);
+            }
+        } 
         else
-            decoder.decode(bits, decodedData);
-        if (channels == 2)
-            decoder.decodeStereo(decodedData, frameSize);
+        {
+        	while (decoder.decode(bits, decodedData) == 0)
+            {
+                if (channels == 2)
+                    decoder.decodeStereo(decodedData, frameSize);
 
-    /* PCM saturation */
-        for (i = 0; i < frameSize * channels; i++) {
-            if (decodedData[i] > 32767.0f)
-                decodedData[i] = 32767.0f;
-            else if (decodedData[i] < -32768.0f)
-                decodedData[i] = -32768.0f;
-        }
+                for (i = 0; i < frameSize * channels; i++, outputSize++)
+                {
+                    // PCM saturation
+                    if (decodedData[i] > 32767.0f)
+                        decodedData[i] = 32767.0f;
+                    else if (decodedData[i] < -32768.0f)
+                        decodedData[i] = -32768.0f;
 
-    /* convert to short and save to buffer */
-        for (i = 0; i < frameSize * channels; i++, outputSize++) {
-            outputData[outputSize] = (decodedData[i] > 0) ?
-                    (short) (decodedData[i] + 0.5f) :
-                    (short) (decodedData[i] - 0.5f);
+                    // Convert to short and save to buffer
+                    outputData[outputSize] = (decodedData[i] > 0)
+                                         ? (short) (decodedData[i] + .5f)
+                                         : (short) (decodedData[i] - .5f);
+                }
+            }
         }
     }
 }
